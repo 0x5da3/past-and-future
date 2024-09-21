@@ -52,9 +52,6 @@ fn App() -> Element {
                     }
                 }
             },
-            input { name: YEAR, value: "{year.read()}" }
-            input { name: MONTH, value: "{month.read()}" }
-            input { name: DAY, value: "{day.read()}" }
             input { r#type: "date", name: "birth_day" }
             input { r#type: "date", name: "future" }
             button { r#type: "submit", "送信" }
