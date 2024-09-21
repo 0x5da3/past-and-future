@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use chrono::{TimeDelta, TimeZone};
+use chrono::{FixedOffset, NaiveDate, TimeDelta, TimeZone};
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 
@@ -11,55 +11,75 @@ fn main() {
     launch(App);
 }
 
-const YEAR: &str = "year";
-const MONTH: &str = "month";
-const DAY: &str = "day";
+const BIRTHDAY: &str = "Birthday";
+const DEATHANNIV: &str = "DeathAnniv";
 
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
-    let mut year = use_signal(|| 2000i32);
-    let mut month = use_signal(|| 1u32);
-    let mut day = use_signal(|| 1u32);
-    let today = chrono::Utc::now().date_naive();
-    let birth_day = chrono::Utc
-        .with_ymd_and_hms(*year.read(), *month.read(), *day.read(), 0, 0, 0)
-        .single()
-        .unwrap()
-        .date_naive();
-    let past_time: TimeDelta = today - birth_day;
-    let secs = past_time.num_seconds();
-    let minutes = past_time.num_minutes();
-    let hour = past_time.num_hours();
-    let days = past_time.num_days();
-    let weeks = past_time.num_weeks();
+    let mut birth_day = use_signal(|| "2000-01-01".to_string());
+    let mut death_anniv_day = use_signal(|| "2040-01-01".to_string());
 
-    let t = format!("{weeks}週 {days}日 {hour}時間 {minutes}分 {secs}秒");
+    let today = (chrono::Utc::now() + FixedOffset::east_opt(9 * 60 * 60).unwrap()).date_naive();
+    info!("{birth_day}");
+    let chrono_bd = chrono::NaiveDate::parse_from_str(&birth_day.read(), "%Y-%m-%d").unwrap();
+    let chrono_dad =
+        chrono::NaiveDate::parse_from_str(&death_anniv_day.read(), "%Y-%m-%d").unwrap();
+
+    let past_time = rt_time_str(today, chrono_bd);
+    let future_time = rt_time_str(chrono_dad, today);
 
     rsx! {
         link { rel: "stylesheet", href: "main.css" }
-        h2 { "生年月日" }
         form {
             onsubmit: move |event| {
                 info!("{event:#?}");
                 for (name, v) in event.values() {
-                    let v = v.as_value();
                     match name.as_str() {
-                        YEAR => year.set(v.parse::<i32>().unwrap()),
-                        MONTH => month.set(v.parse::<u32>().unwrap()),
-                        DAY => day.set(v.parse::<u32>().unwrap()),
+                        BIRTHDAY => {
+                            let v = v.as_value();
+                            let date = chrono::NaiveDate::parse_from_str(&v, "%Y-%m-%d")
+                                .unwrap();
+                            birth_day.set(date.to_string())
+                        }
+                        DEATHANNIV => {
+                            let v = v.as_value();
+                            let date = chrono::NaiveDate::parse_from_str(&v, "%Y-%m-%d")
+                                .unwrap();
+                            death_anniv_day.set(date.to_string())
+                        }
                         _ => {}
                     }
                 }
             },
-            input { r#type: "date", name: "birth_day" }
-            input { r#type: "date", name: "future" }
+            h4 { "生年月日" }
+            input { r#type: "date", name: "Birthday", value: "{birth_day}" }
+            h4 { "今日" }
+            h5 { "{today:?}" }
+
+            h4 { "命日" }
+            input { r#type: "date", name: "DeathAnniv", value: "2040-01-01" }
+            br {}
+            hr {}
             button { r#type: "submit", "送信" }
         }
-        div { "{today:?}" }
-        div { "{t}" }
-        div {
-            h2 { "これから生きていく時間" }
-        }
+
+        h3 { "これまで生きてきた時間" }
+        div { "{past_time}" }
+        h3 { "これから生きていく時間" }
+        div { "{future_time}" }
     }
+}
+
+fn get_today() {}
+
+fn rt_time_str(left_item: NaiveDate, right_item: NaiveDate) -> String {
+    let time: TimeDelta = left_item - right_item;
+    let secs = time.num_seconds();
+    let minutes = time.num_minutes();
+    let hour = time.num_hours();
+    let days = time.num_days();
+    let weeks = time.num_weeks();
+    let times = format!("{weeks}週 {days}日 {hour}時間 {minutes}分 {secs}秒");
+    times
 }
