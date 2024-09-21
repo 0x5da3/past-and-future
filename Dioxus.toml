@@ -8,7 +8,7 @@ name = "past-and-future"
 default_platform = "web"
 
 # `build` & `serve` dist path
-out_dir = "dist"
+out_dir = "docs"
 
 # resource (assets) file folder
 asset_dir = "assets"
@@ -17,6 +17,7 @@ asset_dir = "assets"
 
 # HTML title tag content
 title = "past-and-future"
+base_path = "past-and-future"
 
 [web.watcher]
 
